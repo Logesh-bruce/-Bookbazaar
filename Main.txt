@@ -1,0 +1,83 @@
+// src/main/java/com/bookbazaar/BookBazaarApplication.java
+
+package com.bookbazaar;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.stereotype.*;
+import org.springframework.ui.Model;
+import javax.persistence.*;
+import org.springframework.data.jpa.repository.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import java.util.List;
+
+@SpringBootApplication
+public class BookBazaarApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(BookBazaarApplication.class, args);
+    }
+}
+
+// Entity
+@Entity
+class Book {
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    Long id;
+    String title, author;
+    double price;
+
+    // Getters & setters
+    // ...
+}
+
+// Spring Data Repository
+interface BookRepo extends JpaRepository<Book, Long> {}
+
+// Controller
+@Controller
+@RequestMapping("/")
+class BookController {
+    @Autowired BookRepo repo;
+
+    @GetMapping
+    String home(Model m) {
+        m.addAttribute("books", repo.findAll());
+        return "home";
+    }
+
+    @PostMapping("/add")
+    String add(@ModelAttribute Book book) {
+        repo.save(book);
+        return "redirect:/";
+    }
+
+    @GetMapping("/delete/{id}")
+    String delete(@PathVariable Long id) {
+        repo.deleteById(id);
+        return "redirect:/";
+    }
+}
+
+//html
+
+<!-- src/main/resources/templates/home.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><title>BookBazaar</title></head>
+<body>
+<h1>📚 BookBazaar</h1>
+<form action="/add" method="post">
+  <input name="title" placeholder="Title" required />
+  <input name="author" placeholder="Author" required />
+  <input name="price" placeholder="Price" type="number" step="0.01" required />
+  <button type="submit">Add Book</button>
+</form>
+<ul>
+  <li th:each="b : ${books}">
+    <b th:text="${b.title}"></b> by <i th:text="${b.author}"></i> – $<span th:text="${b.price}"></span>
+    <a th:href="@{'/delete/' + ${b.id}}">Delete</a>
+  </li>
+</ul>
+</body>
+</html>
